@@ -1,0 +1,13 @@
+fastapi>=0.100.0
+uvicorn>=0.23.0
+sqlalchemy>=2.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+# The following are used for processing/simulation but are not strictly required to boot the app stub
+# torch>=2.0.0
+astropy>=5.3.0
+# sunpy>=5.0.0
+pytest>=7.0.0
+httpx>=0.24.0

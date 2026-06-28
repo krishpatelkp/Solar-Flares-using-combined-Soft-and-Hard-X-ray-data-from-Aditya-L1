@@ -1,0 +1,302 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Activity, Radio, Database, Settings, CloudLightning, Globe } from 'lucide-react';
+
+import TelemetryChart from './components/TelemetryChart';
+import ProbabilityGauge from './components/ProbabilityGauge';
+import AlertPanel from './components/AlertPanel';
+import NowcastAlerts from './components/NowcastAlerts';
+import FlareCatalogue from './components/FlareCatalogue';
+import SystemConfig from './components/SystemConfig';
+import LandingPage from './components/LandingPage';
+
+// ─── Top Navigation Bar ───────────────────────────────────────────────────────
+const TopNav = ({ mode, setMode, scrolled }) => (
+  <nav className={`top-nav ${scrolled ? 'scrolled' : ''}`}>
+    {/* Brand */}
+    <a href="#hero" className="nav-brand" onClick={() => setMode('landing')}>
+      <div className="nav-brand-icon">
+        <CloudLightning size={20} color="#fff" />
+      </div>
+      <div>
+        <div className="nav-brand-text">Aditya-L1</div>
+        <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: -2,
+          fontFamily: 'var(--font-body)', letterSpacing: '0.08em' }}>
+          SPACE WEATHER CHALLENGE
+        </div>
+      </div>
+    </a>
+
+    {/* Mode tabs */}
+    <div className="nav-tabs">
+      <button
+        id="nav-tab-landing"
+        className={`nav-tab ${mode === 'landing' ? 'active' : ''}`}
+        onClick={() => setMode('landing')}
+      >
+        <Globe size={16} />
+        Challenge Info
+      </button>
+      <button
+        id="nav-tab-dashboard"
+        className={`nav-tab ${mode === 'dashboard' ? 'active' : ''}`}
+        onClick={() => setMode('dashboard')}
+      >
+        <Activity size={16} />
+        Live Dashboard
+      </button>
+    </div>
+
+    {/* Status */}
+    <div className="nav-status">
+      <span className="live-dot" />
+      ADITYA-L1 ONLINE
+    </div>
+  </nav>
+);
+
+// ─── Dashboard Sidebar ────────────────────────────────────────────────────────
+const Sidebar = ({ activeTab, setActiveTab, isIngesting, handleManualIngest }) => (
+  <aside className="sidebar">
+    {/* Nav items */}
+    <div>
+      <div className="sidebar-section-label">Instruments</div>
+      <nav className="nav-menu">
+        <button
+          id="sidebar-telemetry"
+          className={`nav-item ${activeTab === 'telemetry' ? 'active' : ''}`}
+          onClick={() => setActiveTab('telemetry')}
+        >
+          <Activity size={18} />
+          Live Telemetry
+        </button>
+        <button
+          id="sidebar-alerts"
+          className={`nav-item ${activeTab === 'alerts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('alerts')}
+        >
+          <Radio size={18} />
+          Nowcast Alerts
+        </button>
+      </nav>
+    </div>
+
+    <div>
+      <div className="sidebar-section-label">Archive</div>
+      <nav className="nav-menu">
+        <button
+          id="sidebar-catalogue"
+          className={`nav-item ${activeTab === 'catalogue' ? 'active' : ''}`}
+          onClick={() => setActiveTab('catalogue')}
+        >
+          <Database size={18} />
+          Flare Catalogue
+        </button>
+        <button
+          id="sidebar-config"
+          className={`nav-item ${activeTab === 'config' ? 'active' : ''}`}
+          onClick={() => setActiveTab('config')}
+        >
+          <Settings size={18} />
+          System Config
+        </button>
+      </nav>
+    </div>
+
+    {/* Instrument status */}
+    <div style={{ marginTop: 'auto' }}>
+      <div className="sidebar-section-label" style={{ marginBottom: 12 }}>Instrument Status</div>
+      {[
+        { name: 'SoLEXS', status: 'Nominal', band: '2–22 keV', color: '#F47216' },
+        { name: 'HEL1OS', status: 'Nominal', band: '10–150 keV', color: '#3B9EFF' },
+      ].map(({ name, status, band, color }) => (
+        <div key={name} style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '8px 12px', marginBottom: 6,
+          background: 'rgba(255,255,255,0.03)', borderRadius: 8,
+          border: '1px solid var(--border-subtle)',
+        }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C9A7',
+            boxShadow: '0 0 6px #00C9A7', flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>{name}</div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{band}</div>
+          </div>
+          <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#00C9A7', letterSpacing: '0.06em' }}>
+            {status}
+          </div>
+        </div>
+      ))}
+
+      {/* Force sync button */}
+      <button
+        id="force-sync-btn"
+        onClick={handleManualIngest}
+        disabled={isIngesting}
+        className="btn btn-secondary"
+        style={{ width: '100%', marginTop: 12, justifyContent: 'center',
+          opacity: isIngesting ? 0.6 : 1 }}
+      >
+        {isIngesting ? '⟳ Syncing...' : '↻ Force ISRO Sync'}
+      </button>
+    </div>
+  </aside>
+);
+
+// ─── Dashboard View ───────────────────────────────────────────────────────────
+const DashboardView = ({ forecast, loading, isIngesting, handleManualIngest }) => {
+  const [activeTab, setActiveTab] = useState('telemetry');
+
+  return (
+    <div
+      className="dashboard-container"
+      style={{ background: 'var(--bg-void)', backgroundImage: 'var(--gradient-hero)' }}
+    >
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isIngesting={isIngesting}
+        handleManualIngest={handleManualIngest}
+      />
+
+      <main className="main-content">
+        {/* Top bar */}
+        <div className="top-bar">
+          <div>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.7rem', fontWeight: 800,
+              color: 'var(--text-primary)' }}>
+              Solar Flare Nowcasting
+            </h1>
+            <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: '0.9rem' }}>
+              Real-time telemetry · SoLEXS & HEL1OS payloads · Aditya-L1
+            </p>
+          </div>
+          <div className={`status-badge ${forecast?.probability_5m > 0.8 ? 'warning' : ''}`}>
+            <span style={{
+              width: 8, height: 8, background: forecast?.probability_5m > 0.8 ? '#FF4444' : '#00C9A7',
+              borderRadius: '50%', display: 'inline-block',
+              animation: 'pulse-ring 2s infinite',
+            }} />
+            {forecast?.probability_5m > 0.8 ? 'ALERT' : 'SYSTEM ONLINE'}
+          </div>
+        </div>
+
+        {/* Tab: Telemetry */}
+        {activeTab === 'telemetry' && (
+          loading && !forecast ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center',
+              height: 400, flexDirection: 'column', gap: 16 }}>
+              <div style={{ fontSize: '2rem', animation: 'spin-slow 2s linear infinite' }}>🛰️</div>
+              <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--text-secondary)' }}>
+                Connecting to ISRO Backend…
+              </h2>
+            </div>
+          ) : (
+            <>
+              {/* Main 2-col grid */}
+              <div className="grid-main">
+                <TelemetryChart />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <ProbabilityGauge probability={forecast?.probability_5m ?? 0.42} />
+                  <AlertPanel forecast={forecast ?? {}} />
+                </div>
+              </div>
+
+              {/* 3-col metric cards */}
+              <div className="grid-3">
+                {[
+                  { label: '15-Min Forecast', val: Math.round((forecast?.probability_15m ?? 0.38) * 100), unit: '%', color: '#F47216' },
+                  { label: '30-Min Forecast', val: Math.round((forecast?.probability_30m ?? 0.29) * 100), unit: '%', color: '#3B9EFF' },
+                  { label: '24-Hr Forecast', val: Math.round((forecast?.probability_24h ?? 0.61) * 100), unit: '%', color: '#A78BFA' },
+                ].map(({ label, val, unit, color }) => (
+                  <div key={label} className="glass-card" style={{ border: `1px solid ${color}20` }}>
+                    <div className="metric-title">{label}</div>
+                    <div className="metric-value" style={{ color }}>
+                      {val}<span className="metric-unit">{unit}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )
+        )}
+
+        {activeTab === 'alerts' && <NowcastAlerts />}
+        {activeTab === 'catalogue' && <FlareCatalogue />}
+        {activeTab === 'config' && <SystemConfig />}
+      </main>
+    </div>
+  );
+};
+
+// ─── Root App ─────────────────────────────────────────────────────────────────
+function App() {
+  const [mode, setMode] = useState('landing');
+  const [forecast, setForecast] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isIngesting, setIsIngesting] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Scroll detection for nav styling
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Use static mock data (backend not running)
+  // Simulate a slowly varying probability so the gauge feels live
+  const mockBase = useRef(0.42);
+  useEffect(() => {
+    const MOCK = {
+      probability_5m: mockBase.current,
+      probability_15m: 0.38,
+      probability_30m: 0.29,
+      probability_24h: 0.61,
+      temperature_mk: 12.4,
+      lead_time_minutes: 23,
+    };
+    setForecast(MOCK);
+    setLoading(false);
+
+    // Gently drift the 5m probability ±0.05 every 3s for visual liveliness
+    const iv = setInterval(() => {
+      mockBase.current = Math.min(0.95, Math.max(0.1,
+        mockBase.current + (Math.random() - 0.5) * 0.06
+      ));
+      setForecast(prev => ({
+        ...prev,
+        probability_5m: mockBase.current,
+      }));
+    }, 3000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const handleManualIngest = () => {
+    setIsIngesting(true);
+    setTimeout(() => {
+      mockBase.current = Math.random() * 0.7 + 0.1;
+      setForecast(prev => ({ ...prev, probability_5m: mockBase.current }));
+      setIsIngesting(false);
+    }, 1500);
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg-void)' }}>
+      <TopNav mode={mode} setMode={setMode} scrolled={scrolled} />
+      <div className="app-wrapper">
+        {mode === 'landing' ? (
+          <LandingPage onSwitchToDashboard={() => setMode('dashboard')} />
+        ) : (
+          <DashboardView
+            forecast={forecast}
+            loading={loading}
+            isIngesting={isIngesting}
+            handleManualIngest={handleManualIngest}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default App;

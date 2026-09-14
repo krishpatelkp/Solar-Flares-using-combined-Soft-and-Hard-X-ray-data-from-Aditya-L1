@@ -1,7 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "cd solar_flare_frontend && npm install && npm run build",
-  "outputDirectory": "solar_flare_frontend/dist",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/api/(.*)",

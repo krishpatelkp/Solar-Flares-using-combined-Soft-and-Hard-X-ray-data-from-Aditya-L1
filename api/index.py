@@ -167,11 +167,17 @@ def calculate_physics_forecast(temp_mk: float, em: float, df_dt: float) -> Dict[
         "saliency_focus": saliency_focus
     }
 
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "Aditya-L1 Solar Flare Forecasting Serverless API"}
+
 @app.get("/api/health")
+@app.get("/health")
 def health():
     return {"status": "ok", "service": "Aditya-L1 Space Weather Serverless API", "version": "1.0.0"}
 
 @app.get("/api/forecast", response_model=ForecastResponse)
+@app.get("/forecast", response_model=ForecastResponse)
 def get_forecast(state: str = "nominal"):
     if state in ("storm", "flare"):
         sxr1 = 1.5e-5
@@ -202,10 +208,12 @@ def get_forecast(state: str = "nominal"):
     )
 
 @app.get("/api/flares", response_model=List[Flare])
+@app.get("/flares", response_model=List[Flare])
 def list_flares():
     return CATALOGUE_DATA
 
 @app.post("/api/simulate", response_model=SimulationResponse)
+@app.post("/simulate", response_model=SimulationResponse)
 def simulate_flare(req: SimulationRequest):
     pred = calculate_physics_forecast(req.temperature_mk, req.emission_measure, req.df_dt)
     return SimulationResponse(
@@ -223,6 +231,7 @@ def simulate_flare(req: SimulationRequest):
     )
 
 @app.post("/api/ingest")
+@app.post("/ingest")
 def trigger_ingestion():
     now = datetime.now(timezone.utc)
     new_flare = {

@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd solar_flare_frontend && npm install && npm run build",
-    "start": "cd solar_flare_frontend && npm run preview",
-    "dev": "cd solar_flare_frontend && npm run dev"
+    "build": "npm --prefix solar_flare_frontend install && npm run build --prefix solar_flare_frontend && node -e \"const fs=require('fs'); fs.cpSync('solar_flare_frontend/dist', 'dist', {recursive: true});\"",
+    "start": "npm run preview --prefix solar_flare_frontend",
+    "dev": "npm run dev --prefix solar_flare_frontend"
   }
 }

@@ -1,0 +1,29 @@
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Heavy Backend & ML Pipeline (runs on dedicated servers)
+solar_flare_backend/
+ml_pipeline/
+notebooks/
+docs/
+
+# Binaries & Datasets
+*.pt
+*.pth
+*.fits
+*.h5
+*.sqlite*
+*.db
+*.log
+*.pptx
+generate_ppt.py
+
+# Git & Caches
+.git/
+.github/
+.pytest_cache/
+__pycache__/
+*.pyc

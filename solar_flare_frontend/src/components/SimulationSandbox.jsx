@@ -39,9 +39,9 @@ const PRESETS = [
 ];
 
 export default function SimulationSandbox() {
-  const [tempMk, setTempMk] = useState(18.2);
-  const [logEm, setLogEm] = useState(47.4);
-  const [dfDt, setDfDt] = useState(0.014);
+  const [tempMk, setTempMk] = useState(14.5);
+  const [logEm, setLogEm] = useState(46.7);
+  const [dfDt, setDfDt] = useState(0.005);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 

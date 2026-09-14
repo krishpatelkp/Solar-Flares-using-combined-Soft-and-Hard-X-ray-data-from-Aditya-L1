@@ -111,10 +111,13 @@ class MLInferenceService:
                 p_m = float(probs[3])
                 p_x = float(probs[4])
 
-                # Flare occurrence probabilities by horizon
-                prob_5m = float(np.clip(p_c + p_m + p_x, 0.05, 0.98))
-                prob_15m = float(np.clip(p_m + p_x, 0.02, 0.95))
-                prob_30m = float(np.clip(p_x + (0.5 * p_m), 0.01, 0.90))
+                # Operational Space Weather Hazard Probability:
+                # Major events (M & X class) drive critical warnings.
+                # C-class events represent moderate solar background activity.
+                prob_major = float(p_x + p_m)
+                prob_5m = float(np.clip(prob_major + (0.35 * p_c), 0.05, 0.98))
+                prob_15m = float(np.clip(prob_major + (0.15 * p_c), 0.02, 0.95))
+                prob_30m = float(np.clip(p_x + (0.45 * p_m), 0.01, 0.90))
 
                 class_probabilities = {
                     "A (Quiet)": round(float(probs[0]), 3),

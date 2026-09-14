@@ -47,23 +47,29 @@ def list_flares(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return flares
 
 @router.get("/forecast", response_model=ForecastResponse)
-def get_forecast():
+def get_forecast(state: str = "nominal"):
     """
     Get the current solar flare forecast utilizing the HOPE precursor technique 
     and the ML forecasting model.
+    By default returns nominal active solar conditions (peaceful space weather).
+    Pass state='storm' to simulate an active M/X flare event.
     """
-    # 1. Simulate deriving real-time plasma parameters (T and EM)
-    # In reality, this data comes from the latest ingested SXR data
-    hope_data = ml_service.calculate_hope_precursor(sxr_band_1=1.5e-5, sxr_band_2=2.1e-6)
-    
-    # 2. Extract feature tensor for ML model (mocked)
+    if state in ("storm", "flare"):
+        sxr1 = 1.5e-5
+        sxr2 = 2.1e-6
+        df_dt = 0.005
+    else:
+        # Nominal active solar background (B/C class range)
+        sxr1 = 6.5e-7
+        sxr2 = 1.8e-6
+        df_dt = 0.0006
+
+    hope_data = ml_service.calculate_hope_precursor(sxr_band_1=sxr1, sxr_band_2=sxr2)
     features = {
         "temperature_mk": hope_data["temperature_mk"],
         "emission_measure": hope_data["emission_measure"],
-        "dF_dt": 0.005 # Example derivative
+        "dF_dt": df_dt
     }
-    
-    # 3. Predict using the ML Service
     prediction = ml_service.predict_forecast(features)
     
     return ForecastResponse(

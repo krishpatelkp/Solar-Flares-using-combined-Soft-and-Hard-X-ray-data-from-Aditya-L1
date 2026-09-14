@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from app.db.database import get_db
 from app.db import models
-from app.schemas.flare import Flare, ForecastResponse
+from app.schemas.flare import Flare, ForecastResponse, SimulationRequest, SimulationResponse
 from app.services.ingestion import ingestion_service
 from app.services.processing import processing_service
 from app.services.ml_inference import ml_service
@@ -72,5 +72,35 @@ def get_forecast():
         probability_30m=prediction["probability_30m"],
         lead_time_minutes=prediction["lead_time_minutes"],
         temperature_mk=hope_data["temperature_mk"],
-        emission_measure=hope_data["emission_measure"]
+        emission_measure=hope_data["emission_measure"],
+        predicted_class=prediction.get("predicted_class"),
+        class_probabilities=prediction.get("class_probabilities"),
+        attention_weights=prediction.get("attention_weights"),
+        saliency_focus=prediction.get("saliency_focus")
+    )
+
+@router.post("/simulate", response_model=SimulationResponse)
+def simulate_solar_flare(req: SimulationRequest):
+    """
+    Run on-demand interactive neural simulation for custom physical parameters:
+    Coronal Temperature (Te), Emission Measure (EM), and Flux Rise Rate (dF/dt).
+    """
+    features = {
+        "temperature_mk": req.temperature_mk,
+        "emission_measure": req.emission_measure,
+        "dF_dt": req.df_dt
+    }
+    pred = ml_service.predict_forecast(features)
+    return SimulationResponse(
+        probability_5m=pred["probability_5m"],
+        probability_15m=pred["probability_15m"],
+        probability_30m=pred["probability_30m"],
+        lead_time_minutes=pred["lead_time_minutes"],
+        predicted_class=pred["predicted_class"],
+        class_probabilities=pred["class_probabilities"],
+        temperature_mk=req.temperature_mk,
+        emission_measure=req.emission_measure,
+        df_dt=req.df_dt,
+        attention_weights=pred.get("attention_weights"),
+        saliency_focus=pred.get("saliency_focus")
     )

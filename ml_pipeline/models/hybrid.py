@@ -30,7 +30,7 @@ class SolarFlareNet(nn.Module):
         # 4. Output Classifier
         self.fc = nn.Linear(256, num_classes)
         
-    def forward(self, x):
+    def forward(self, x, return_attention: bool = False):
         # x shape: (batch, seq_len, features) -> Permute for Conv1d
         x = x.permute(0, 2, 1)
         x = self.relu(self.bn1(self.conv1(x)))
@@ -44,11 +44,20 @@ class SolarFlareNet(nn.Module):
         lstm_out = self.bn2(lstm_out)
         lstm_out = lstm_out.permute(0, 2, 1)
         
-        # Transformer
-        trans_out = self.transformer(lstm_out)
-        
-        # Pooling (take the last sequence element)
-        out = trans_out[:, -1, :]
-        
-        # Classification
-        return self.fc(out)
+        if return_attention:
+            # Layer 0 forward
+            h = self.transformer.layers[0](lstm_out)
+            # Layer 1 forward with attention weights
+            attn_layer = self.transformer.layers[1]
+            attn_out, attn_weights = attn_layer.self_attn(h, h, h, need_weights=True, average_attn_weights=True)
+            h2 = attn_layer.norm1(h + attn_layer.dropout1(attn_out))
+            trans_out = attn_layer.norm2(h2 + attn_layer.dropout2(attn_layer.linear2(attn_layer.dropout(attn_layer.activation(attn_layer.linear1(h2))))))
+            out = trans_out[:, -1, :]
+            logits = self.fc(out)
+            return logits, attn_weights[:, -1, :]
+        else:
+            # Transformer
+            trans_out = self.transformer(lstm_out)
+            out = trans_out[:, -1, :]
+            return self.fc(out)
+

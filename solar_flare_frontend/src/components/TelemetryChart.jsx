@@ -60,18 +60,98 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const TelemetryChart = () => {
-  const [data] = useState(() => generateData());
+  const [streamData, setStreamData] = useState(() => generateData().slice(30, 90));
   const [showGOES, setShowGOES] = useState(false);
-  const [liveIdx, setLiveIdx] = useState(60);
+  const [wsConnected, setWsConnected] = useState(false);
 
   useEffect(() => {
-    const iv = setInterval(() => {
-      setLiveIdx(prev => (prev >= data.length - 1 ? 60 : prev + 1));
-    }, 500);
-    return () => clearInterval(iv);
-  }, [data]);
+    let ws = null;
+    let fallbackInterval = null;
+    let isSubscribed = true;
 
-  const displayData = data.slice(0, liveIdx);
+    const startFallback = () => {
+      if (fallbackInterval) clearInterval(fallbackInterval);
+      fallbackInterval = setInterval(() => {
+        setStreamData(prev => {
+          const nextT = prev.length > 0 ? prev[prev.length - 1].t + 1 : 1;
+          const now = new Date();
+          const timeStr = `${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}:${String(now.getUTCSeconds()).padStart(2, '0')}`;
+          const nextPoint = {
+            t: nextT,
+            time: timeStr,
+            sxr: Math.max(1e-9, 2.5e-6 + (Math.random() - 0.5) * 5e-8),
+            hxr: Math.max(1e-10, 3.5e-7 + (Math.random() - 0.5) * 2e-8),
+          };
+          const updated = [...prev, nextPoint];
+          return updated.length > 60 ? updated.slice(updated.length - 60) : updated;
+        });
+      }, 1000);
+    };
+
+    const connectWebSocket = () => {
+      try {
+        const wsUrl = 'ws://127.0.0.1:8000/ws/telemetry';
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          if (!isSubscribed) return;
+          setWsConnected(true);
+          if (fallbackInterval) {
+            clearInterval(fallbackInterval);
+            fallbackInterval = null;
+          }
+        };
+
+        ws.onmessage = (event) => {
+          if (!isSubscribed) return;
+          try {
+            const pkt = JSON.parse(event.data);
+            setStreamData(prev => {
+              const nextT = prev.length > 0 ? prev[prev.length - 1].t + 1 : 1;
+              const nextPoint = {
+                t: nextT,
+                time: pkt.timestamp,
+                sxr: pkt.solexs_flux,
+                hxr: pkt.helios_hxr * 1e-9,
+                temperature_mk: pkt.temperature_mk,
+                df_dt: pkt.df_dt
+              };
+              const updated = [...prev, nextPoint];
+              return updated.length > 60 ? updated.slice(updated.length - 60) : updated;
+            });
+          } catch (err) {
+            console.error('Error parsing telemetry packet', err);
+          }
+        };
+
+        ws.onerror = () => {
+          if (isSubscribed) setWsConnected(false);
+        };
+
+        ws.onclose = () => {
+          if (!isSubscribed) return;
+          setWsConnected(false);
+          if (!fallbackInterval) startFallback();
+          setTimeout(() => {
+            if (isSubscribed) connectWebSocket();
+          }, 3000);
+        };
+      } catch (e) {
+        setWsConnected(false);
+        startFallback();
+      }
+    };
+
+    connectWebSocket();
+
+    return () => {
+      isSubscribed = false;
+      if (ws) ws.close();
+      if (fallbackInterval) clearInterval(fallbackInterval);
+    };
+  }, []);
+
+  const displayData = streamData;
   const latest = displayData[displayData.length - 1];
 
   return (
@@ -84,7 +164,7 @@ const TelemetryChart = () => {
             Aditya-L1 X-Ray Telemetry
           </h3>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            SoLEXS + HEL1OS · Live stream · 1s cadence
+            SoLEXS + HEL1OS · 1s Cadence Live Ingest
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -95,9 +175,20 @@ const TelemetryChart = () => {
           >
             {showGOES ? '✓ ' : ''}GOES ref
           </button>
-          <div className="live-dot" />
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-teal)',
-            letterSpacing: '0.08em' }}>LIVE</span>
+          <div
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: wsConnected ? '#00C9A7' : '#F59E0B',
+              boxShadow: wsConnected ? '0 0 8px #00C9A7' : '0 0 8px #F59E0B',
+              animation: 'pulse-ring 2s infinite'
+            }}
+          />
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: wsConnected ? 'var(--accent-teal)' : '#F59E0B',
+            letterSpacing: '0.08em' }}>
+            {wsConnected ? 'WS STREAMING' : 'SIMULATED FEED'}
+          </span>
         </div>
       </div>
 

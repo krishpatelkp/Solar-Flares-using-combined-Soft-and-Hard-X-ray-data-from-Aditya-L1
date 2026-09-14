@@ -32,5 +32,37 @@ def test_get_forecast(client: TestClient):
     data = response.json()
     assert "probability_5m" in data
     assert "temperature_mk" in data
-    # Ensure temperature calculation doesn't throw division by zero errors
     assert data["temperature_mk"] > 0
+    assert "attention_weights" in data
+    assert isinstance(data["attention_weights"], list)
+    assert len(data["attention_weights"]) == 30
+    assert "saliency_focus" in data
+
+def test_simulate_solar_flare(client: TestClient):
+    payload = {
+        "temperature_mk": 22.5,
+        "emission_measure": 8.0e48,
+        "df_dt": 0.015
+    }
+    response = client.post("/api/simulate", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "predicted_class" in data
+    assert "class_probabilities" in data
+    assert data["probability_5m"] > 0
+    assert data["temperature_mk"] == 22.5
+    assert "attention_weights" in data
+    assert isinstance(data["attention_weights"], list)
+    assert len(data["attention_weights"]) == 30
+    assert "saliency_focus" in data
+
+def test_websocket_telemetry_stream(client: TestClient):
+    with client.websocket_connect("/ws/telemetry") as ws:
+        data = ws.receive_json()
+        assert "timestamp" in data
+        assert "solexs_flux" in data
+        assert "helios_hxr" in data
+        assert "temperature_mk" in data
+        assert data["satellite"] == "Aditya-L1"
+        assert data["status"] == "NOMINAL"
+

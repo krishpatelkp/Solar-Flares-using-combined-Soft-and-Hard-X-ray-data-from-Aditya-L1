@@ -39,3 +39,13 @@ export const triggerIngestion = async () => {
         return { status: "error", message: "Failed to connect to ISRO backend" };
     }
 };
+
+export const simulateFlare = async (params) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/simulate`, params);
+        return response.data;
+    } catch (error) {
+        console.error("Error simulating flare event", error);
+        return null;
+    }
+};

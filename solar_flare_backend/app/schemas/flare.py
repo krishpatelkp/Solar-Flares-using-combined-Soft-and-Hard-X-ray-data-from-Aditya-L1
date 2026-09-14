@@ -27,3 +27,25 @@ class ForecastResponse(BaseModel):
     lead_time_minutes: float
     temperature_mk: float
     emission_measure: float
+    predicted_class: Optional[str] = None
+    class_probabilities: Optional[dict[str, float]] = None
+    attention_weights: Optional[list[float]] = None
+    saliency_focus: Optional[str] = None
+
+class SimulationRequest(BaseModel):
+    temperature_mk: float = 14.5
+    emission_measure: float = 5.5e47
+    df_dt: float = 0.005
+
+class SimulationResponse(BaseModel):
+    probability_5m: float
+    probability_15m: float
+    probability_30m: float
+    lead_time_minutes: float
+    predicted_class: str
+    class_probabilities: dict[str, float]
+    temperature_mk: float
+    emission_measure: float
+    df_dt: float
+    attention_weights: Optional[list[float]] = None
+    saliency_focus: Optional[str] = None

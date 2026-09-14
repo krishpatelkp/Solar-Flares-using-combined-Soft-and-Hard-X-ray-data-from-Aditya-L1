@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Activity, Radio, Database, Settings, CloudLightning, Globe } from 'lucide-react';
+import { Activity, Radio, Database, Settings, CloudLightning, Globe, Sliders, ShieldAlert, FileText } from 'lucide-react';
 
 import TelemetryChart from './components/TelemetryChart';
 import ProbabilityGauge from './components/ProbabilityGauge';
@@ -8,6 +8,10 @@ import NowcastAlerts from './components/NowcastAlerts';
 import FlareCatalogue from './components/FlareCatalogue';
 import SystemConfig from './components/SystemConfig';
 import LandingPage from './components/LandingPage';
+import SimulationSandbox from './components/SimulationSandbox';
+import ThreatMatrix from './components/ThreatMatrix';
+import AdvisoryBulletinModal from './components/AdvisoryBulletinModal';
+import AttentionHeatmap from './components/AttentionHeatmap';
 import { getForecast, triggerIngestion } from './services/api';
 
 // ─── Top Navigation Bar ───────────────────────────────────────────────────────
@@ -103,6 +107,28 @@ const Sidebar = ({ activeTab, setActiveTab, isIngesting, handleManualIngest }) =
       </nav>
     </div>
 
+    <div>
+      <div className="sidebar-section-label">Intelligence</div>
+      <nav className="nav-menu">
+        <button
+          id="sidebar-sandbox"
+          className={`nav-item ${activeTab === 'sandbox' ? 'active' : ''}`}
+          onClick={() => setActiveTab('sandbox')}
+        >
+          <Sliders size={18} />
+          Simulation Sandbox
+        </button>
+        <button
+          id="sidebar-threat"
+          className={`nav-item ${activeTab === 'threat' ? 'active' : ''}`}
+          onClick={() => setActiveTab('threat')}
+        >
+          <ShieldAlert size={18} />
+          Threat Matrix
+        </button>
+      </nav>
+    </div>
+
     {/* Instrument status */}
     <div style={{ marginTop: 'auto' }}>
       <div className="sidebar-section-label" style={{ marginBottom: 12 }}>Instrument Status</div>
@@ -146,6 +172,7 @@ const Sidebar = ({ activeTab, setActiveTab, isIngesting, handleManualIngest }) =
 // ─── Dashboard View ───────────────────────────────────────────────────────────
 const DashboardView = ({ forecast, loading, isIngesting, handleManualIngest }) => {
   const [activeTab, setActiveTab] = useState('telemetry');
+  const [bulletinOpen, setBulletinOpen] = useState(false);
 
   return (
     <div
@@ -171,13 +198,30 @@ const DashboardView = ({ forecast, loading, isIngesting, handleManualIngest }) =
               Real-time telemetry · SoLEXS & HEL1OS payloads · Aditya-L1
             </p>
           </div>
-          <div className={`status-badge ${forecast?.probability_5m > 0.8 ? 'warning' : ''}`}>
-            <span style={{
-              width: 8, height: 8, background: forecast?.probability_5m > 0.8 ? '#FF4444' : '#00C9A7',
-              borderRadius: '50%', display: 'inline-block',
-              animation: 'pulse-ring 2s infinite',
-            }} />
-            {forecast?.probability_5m > 0.8 ? 'ALERT' : 'SYSTEM ONLINE'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              id="open-bulletin-btn"
+              onClick={() => setBulletinOpen(true)}
+              className="btn btn-secondary btn-sm"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                borderColor: 'rgba(244,114,22,0.4)',
+                background: 'rgba(244,114,22,0.1)'
+              }}
+            >
+              <FileText size={15} color="var(--solar-orange)" />
+              <span>ISRO Space Weather Bulletin</span>
+            </button>
+            <div className={`status-badge ${forecast?.probability_5m > 0.8 ? 'warning' : ''}`}>
+              <span style={{
+                width: 8, height: 8, background: forecast?.probability_5m > 0.8 ? '#FF4444' : '#00C9A7',
+                borderRadius: '50%', display: 'inline-block',
+                animation: 'pulse-ring 2s infinite',
+              }} />
+              {forecast?.probability_5m > 0.8 ? 'ALERT' : 'SYSTEM ONLINE'}
+            </div>
           </div>
         </div>
 
@@ -217,13 +261,30 @@ const DashboardView = ({ forecast, loading, isIngesting, handleManualIngest }) =
                   </div>
                 ))}
               </div>
+
+              {/* Feature 4: Model Attention Explainability (XAI Heatmap) */}
+              <div style={{ marginTop: 20 }}>
+                <AttentionHeatmap
+                  attentionWeights={forecast?.attention_weights}
+                  saliencyFocus={forecast?.saliency_focus}
+                  predictedClass={forecast?.predicted_class}
+                />
+              </div>
             </>
           )
         )}
 
         {activeTab === 'alerts' && <NowcastAlerts />}
         {activeTab === 'catalogue' && <FlareCatalogue />}
+        {activeTab === 'sandbox' && <SimulationSandbox />}
+        {activeTab === 'threat' && <ThreatMatrix forecast={forecast} />}
         {activeTab === 'config' && <SystemConfig />}
+
+        <AdvisoryBulletinModal
+          isOpen={bulletinOpen}
+          onClose={() => setBulletinOpen(false)}
+          forecast={forecast}
+        />
       </main>
     </div>
   );

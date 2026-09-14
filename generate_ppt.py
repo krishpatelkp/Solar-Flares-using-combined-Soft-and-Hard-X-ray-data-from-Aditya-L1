@@ -1611,7 +1611,7 @@ def main():
         builder(prs)
 
     output_path = os.path.join(
-        r"c:\Users\shyampatel1440\OneDrive\Desktop\p-1",
+        os.path.dirname(os.path.abspath(__file__)),
         "SolarFlare_Nowcasting_Forecasting_Aditya_L1.pptx"
     )
     prs.save(output_path)

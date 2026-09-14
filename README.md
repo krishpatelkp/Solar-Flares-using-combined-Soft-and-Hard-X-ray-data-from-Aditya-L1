@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 # Solar Flare Nowcasting & Forecasting
 ### Using Combined Soft & Hard X-ray Data from Aditya-L1
@@ -176,7 +176,7 @@ Solar_Flares/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/PatelShyam04/Solar-Flares-using-combined-Soft-and-Hard-X-ray-data-from-Aditya-L1.git
+git clone https://github.com/krishpatelkp/Solar-Flares-using-combined-Soft-and-Hard-X-ray-data-from-Aditya-L1.git
 cd Solar-Flares-using-combined-Soft-and-Hard-X-ray-data-from-Aditya-L1
 ```
 
@@ -377,9 +377,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ## Author
 
-**Shyam Patel**
-- GitHub: [@PatelShyam04](https://github.com/PatelShyam04)
-- Project: [Solar-Flares-using-combined-Soft-and-Hard-X-ray-data-from-Aditya-L1](https://github.com/PatelShyam04/Solar-Flares-using-combined-Soft-and-Hard-X-ray-data-from-Aditya-L1)
+**Krish Patel**
+- GitHub: [@krishpatelkp](https://github.com/krishpatelkp)
+- Email: [kpatel15042005@gmail.com](mailto:kpatel15042005@gmail.com)
+- Project: [Solar-Flares-using-combined-Soft-and-Hard-X-ray-data-from-Aditya-L1](https://github.com/krishpatelkp/Solar-Flares-using-combined-Soft-and-Hard-X-ray-data-from-Aditya-L1)
 
 ---
 

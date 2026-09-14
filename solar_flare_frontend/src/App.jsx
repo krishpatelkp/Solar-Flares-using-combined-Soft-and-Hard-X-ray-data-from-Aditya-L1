@@ -8,6 +8,7 @@ import NowcastAlerts from './components/NowcastAlerts';
 import FlareCatalogue from './components/FlareCatalogue';
 import SystemConfig from './components/SystemConfig';
 import LandingPage from './components/LandingPage';
+import { getForecast, triggerIngestion } from './services/api';
 
 // ─── Top Navigation Bar ───────────────────────────────────────────────────────
 const TopNav = ({ mode, setMode, scrolled }) => (
@@ -243,41 +244,41 @@ function App() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Use static mock data (backend not running)
-  // Simulate a slowly varying probability so the gauge feels live
-  const mockBase = useRef(0.42);
-  useEffect(() => {
-    const MOCK = {
-      probability_5m: mockBase.current,
-      probability_15m: 0.38,
-      probability_30m: 0.29,
-      probability_24h: 0.61,
-      temperature_mk: 12.4,
-      lead_time_minutes: 23,
-    };
-    setForecast(MOCK);
-    setLoading(false);
+  // Fetch live forecast from backend API with periodic refresh
+  const fetchLiveForecast = async () => {
+    try {
+      const data = await getForecast();
+      if (data) {
+        setForecast(prev => ({
+          ...prev,
+          ...data,
+          probability_24h: data.probability_24h ?? 0.61,
+        }));
+      }
+    } catch (err) {
+      console.warn('Backend forecast offline, using local fallback:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Gently drift the 5m probability ±0.05 every 3s for visual liveliness
-    const iv = setInterval(() => {
-      mockBase.current = Math.min(0.95, Math.max(0.1,
-        mockBase.current + (Math.random() - 0.5) * 0.06
-      ));
-      setForecast(prev => ({
-        ...prev,
-        probability_5m: mockBase.current,
-      }));
-    }, 3000);
+  useEffect(() => {
+    fetchLiveForecast();
+    // Poll backend every 10 seconds for updated Aditya-L1 telemetry forecasts
+    const iv = setInterval(fetchLiveForecast, 10000);
     return () => clearInterval(iv);
   }, []);
 
-  const handleManualIngest = () => {
+  const handleManualIngest = async () => {
     setIsIngesting(true);
-    setTimeout(() => {
-      mockBase.current = Math.random() * 0.7 + 0.1;
-      setForecast(prev => ({ ...prev, probability_5m: mockBase.current }));
+    try {
+      await triggerIngestion();
+      await fetchLiveForecast();
+    } catch (err) {
+      console.error('Ingestion error:', err);
+    } finally {
       setIsIngesting(false);
-    }, 1500);
+    }
   };
 
   return (

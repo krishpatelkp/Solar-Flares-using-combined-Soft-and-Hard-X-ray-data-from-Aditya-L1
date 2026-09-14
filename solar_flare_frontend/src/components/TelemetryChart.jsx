@@ -159,7 +159,7 @@ const TelemetryChart = () => {
             {/* Flare onset marker */}
             <ReferenceLine yAxisId="sxr" x="00:55" stroke="rgba(255,68,68,0.5)"
               strokeDasharray="4 3"
-              label={{ value: 'M2.1', fill: '#FF6B6B', fontSize: 10, position: 'top' }} />
+              label={{ value: 'M5.0 Peak', fill: '#FF6B6B', fontSize: 10, position: 'top' }} />
             <Line
               yAxisId="sxr"
               type="monotone"

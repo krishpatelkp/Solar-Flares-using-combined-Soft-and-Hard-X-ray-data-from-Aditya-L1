@@ -1,5 +1,6 @@
 import os
 import torch
+import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 from models.hybrid import SolarFlareNet
@@ -17,8 +18,13 @@ class HistoricalFlareDataset(Dataset):
         grouped = df.groupby("sample_id")
         for name, group in grouped:
             if len(group) == self.seq_len:
-                # Extract features: temperature_mk, emission_measure, dF_dt
-                features = group[["temperature_mk", "emission_measure", "dF_dt"]].values
+                # Extract features: temperature_mk, log10(emission_measure), dF_dt
+                log_em = np.log10(np.maximum(group["emission_measure"].values, 1e30))
+                features = np.column_stack([
+                    group["temperature_mk"].values,
+                    log_em,
+                    group["dF_dt"].values
+                ])
                 target = group["target_class"].iloc[0]
                 
                 self.samples.append(torch.tensor(features, dtype=torch.float32))

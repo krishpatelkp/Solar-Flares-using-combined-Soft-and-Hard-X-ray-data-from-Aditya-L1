@@ -1,0 +1,10 @@
+{
+  "name": "aditya-l1-solar-flare-forecasting",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd solar_flare_frontend && npm install && npm run build",
+    "start": "cd solar_flare_frontend && npm run preview",
+    "dev": "cd solar_flare_frontend && npm run dev"
+  }
+}

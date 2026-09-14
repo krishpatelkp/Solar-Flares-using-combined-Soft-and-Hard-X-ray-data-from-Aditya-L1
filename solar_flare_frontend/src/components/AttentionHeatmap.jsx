@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Zap, Flame, Info, Sparkles, Clock, TrendingUp } from 'lucide-react';
+import { Eye, Sparkles, Clock, TrendingUp } from 'lucide-react';
 
 export default function AttentionHeatmap({ attentionWeights, saliencyFocus, predictedClass }) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -48,12 +48,19 @@ export default function AttentionHeatmap({ attentionWeights, saliencyFocus, pred
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-          <Clock size={14} color="#F59E0B" />
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Focus Peak:</span>
-          <strong style={{ fontSize: '0.78rem', color: '#F59E0B', fontFamily: 'var(--font-mono)' }}>
-            {activeFocus}
-          </strong>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {predictedClass && (
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+              Target: <strong style={{ color: 'var(--text-primary)' }}>{predictedClass}</strong>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+            <Clock size={14} color="#F59E0B" />
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Focus Peak:</span>
+            <strong style={{ fontSize: '0.78rem', color: '#F59E0B', fontFamily: 'var(--font-mono)' }}>
+              {activeFocus}
+            </strong>
+          </div>
         </div>
       </div>
 

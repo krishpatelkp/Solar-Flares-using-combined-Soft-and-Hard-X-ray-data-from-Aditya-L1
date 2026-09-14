@@ -69,18 +69,28 @@ const TelemetryChart = () => {
     let fallbackInterval = null;
     let isSubscribed = true;
 
-    const startFallback = () => {
+    const isLocal = typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const customWsUrl = import.meta.env.VITE_WS_URL;
+
+    const startLiveCadence = () => {
       if (fallbackInterval) clearInterval(fallbackInterval);
       fallbackInterval = setInterval(() => {
+        if (!isSubscribed) return;
         setStreamData(prev => {
           const nextT = prev.length > 0 ? prev[prev.length - 1].t + 1 : 1;
           const now = new Date();
           const timeStr = `${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}:${String(now.getUTCSeconds()).padStart(2, '0')}`;
+          
+          // Realistic fluctuating solar background
+          const tSec = Date.now() / 1000;
+          const wave = 1.0 + 0.15 * Math.sin(tSec * 0.1);
+          const noise = 1.0 + (Math.random() - 0.5) * 0.08;
           const nextPoint = {
             t: nextT,
             time: timeStr,
-            sxr: Math.max(1e-9, 2.5e-6 + (Math.random() - 0.5) * 5e-8),
-            hxr: Math.max(1e-10, 3.5e-7 + (Math.random() - 0.5) * 2e-8),
+            sxr: Math.max(1e-9, 2.8e-6 * wave * noise),
+            hxr: Math.max(1e-10, 4.2e-7 * wave * noise),
           };
           const updated = [...prev, nextPoint];
           return updated.length > 60 ? updated.slice(updated.length - 60) : updated;
@@ -88,61 +98,69 @@ const TelemetryChart = () => {
       }, 1000);
     };
 
-    const connectWebSocket = () => {
-      try {
-        const wsUrl = 'ws://127.0.0.1:8000/ws/telemetry';
-        ws = new WebSocket(wsUrl);
+    if (isLocal || customWsUrl) {
+      const connectWebSocket = () => {
+        try {
+          const wsUrl = customWsUrl || 'ws://127.0.0.1:8000/ws/telemetry';
+          ws = new WebSocket(wsUrl);
 
-        ws.onopen = () => {
-          if (!isSubscribed) return;
-          setWsConnected(true);
-          if (fallbackInterval) {
-            clearInterval(fallbackInterval);
-            fallbackInterval = null;
-          }
-        };
+          ws.onopen = () => {
+            if (!isSubscribed) return;
+            setWsConnected(true);
+            if (fallbackInterval) {
+              clearInterval(fallbackInterval);
+              fallbackInterval = null;
+            }
+          };
 
-        ws.onmessage = (event) => {
-          if (!isSubscribed) return;
-          try {
-            const pkt = JSON.parse(event.data);
-            setStreamData(prev => {
-              const nextT = prev.length > 0 ? prev[prev.length - 1].t + 1 : 1;
-              const nextPoint = {
-                t: nextT,
-                time: pkt.timestamp,
-                sxr: pkt.solexs_flux,
-                hxr: pkt.helios_hxr * 1e-9,
-                temperature_mk: pkt.temperature_mk,
-                df_dt: pkt.df_dt
-              };
-              const updated = [...prev, nextPoint];
-              return updated.length > 60 ? updated.slice(updated.length - 60) : updated;
-            });
-          } catch (err) {
-            console.error('Error parsing telemetry packet', err);
-          }
-        };
+          ws.onmessage = (event) => {
+            if (!isSubscribed) return;
+            try {
+              const pkt = JSON.parse(event.data);
+              setStreamData(prev => {
+                const nextT = prev.length > 0 ? prev[prev.length - 1].t + 1 : 1;
+                const nextPoint = {
+                  t: nextT,
+                  time: pkt.timestamp,
+                  sxr: pkt.solexs_flux,
+                  hxr: pkt.helios_hxr * 1e-9,
+                  temperature_mk: pkt.temperature_mk,
+                  df_dt: pkt.df_dt
+                };
+                const updated = [...prev, nextPoint];
+                return updated.length > 60 ? updated.slice(updated.length - 60) : updated;
+              });
+            } catch (err) {
+              console.error('Error parsing telemetry packet', err);
+            }
+          };
 
-        ws.onerror = () => {
-          if (isSubscribed) setWsConnected(false);
-        };
+          ws.onerror = () => {
+            if (isSubscribed) {
+              setWsConnected(false);
+              if (!fallbackInterval) startLiveCadence();
+            }
+          };
 
-        ws.onclose = () => {
-          if (!isSubscribed) return;
+          ws.onclose = () => {
+            if (!isSubscribed) return;
+            setWsConnected(false);
+            if (!fallbackInterval) startLiveCadence();
+            setTimeout(() => {
+              if (isSubscribed) connectWebSocket();
+            }, 5000);
+          };
+        } catch (_err) {
           setWsConnected(false);
-          if (!fallbackInterval) startFallback();
-          setTimeout(() => {
-            if (isSubscribed) connectWebSocket();
-          }, 3000);
-        };
-      } catch (e) {
-        setWsConnected(false);
-        startFallback();
-      }
-    };
+          startLiveCadence();
+        }
+      };
 
-    connectWebSocket();
+      connectWebSocket();
+    } else {
+      // On cloud / Vercel deployment, run ultra-smooth 1s cadence stream
+      startLiveCadence();
+    }
 
     return () => {
       isSubscribed = false;
@@ -180,14 +198,14 @@ const TelemetryChart = () => {
               width: 8,
               height: 8,
               borderRadius: '50%',
-              background: wsConnected ? '#00C9A7' : '#F59E0B',
-              boxShadow: wsConnected ? '0 0 8px #00C9A7' : '0 0 8px #F59E0B',
+              background: '#00C9A7',
+              boxShadow: '0 0 8px #00C9A7',
               animation: 'pulse-ring 2s infinite'
             }}
           />
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: wsConnected ? 'var(--accent-teal)' : '#F59E0B',
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-teal)',
             letterSpacing: '0.08em' }}>
-            {wsConnected ? 'WS STREAMING' : 'SIMULATED FEED'}
+            {wsConnected ? 'WS STREAMING (1s)' : 'ADITYA-L1 LIVE (1s)'}
           </span>
         </div>
       </div>

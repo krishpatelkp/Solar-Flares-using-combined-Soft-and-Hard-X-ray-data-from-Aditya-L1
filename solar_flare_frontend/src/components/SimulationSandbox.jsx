@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sliders, Zap, Play, RotateCcw, AlertTriangle, Sparkles, Activity } from 'lucide-react';
+import { Sliders, Play } from 'lucide-react';
 import { simulateFlare } from '../services/api';
 import AttentionHeatmap from './AttentionHeatmap';
 

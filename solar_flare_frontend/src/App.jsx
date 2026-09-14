@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Activity, Radio, Database, Settings, CloudLightning, Globe, Sliders, ShieldAlert, FileText } from 'lucide-react';
 
 import TelemetryChart from './components/TelemetryChart';
@@ -140,7 +140,7 @@ const Sidebar = ({ activeTab, setActiveTab, isIngesting, handleManualIngest }) =
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '8px 12px', marginBottom: 6,
           background: 'rgba(255,255,255,0.03)', borderRadius: 8,
-          border: '1px solid var(--border-subtle)',
+          border: `1px solid ${color}30`,
         }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C9A7',
             boxShadow: '0 0 6px #00C9A7', flexShrink: 0 }} />

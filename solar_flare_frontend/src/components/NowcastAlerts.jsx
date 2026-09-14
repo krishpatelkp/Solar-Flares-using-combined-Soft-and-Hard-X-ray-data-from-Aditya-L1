@@ -91,7 +91,6 @@ function NowcastAlerts() {
               className="glass-card"
               style={{
                 padding: '16px 20px', cursor: 'pointer',
-                borderLeft: `4px solid ${color}`,
                 transition: 'all 0.25s ease',
                 boxShadow: isOpen ? `0 4px 30px ${color}15` : 'var(--shadow-card)',
                 border: `1px solid ${isOpen ? color + '40' : 'var(--border-subtle)'}`,

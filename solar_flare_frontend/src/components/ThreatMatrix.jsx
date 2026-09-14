@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Radio, Satellite, Zap, Compass, AlertOctagon, Info, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { ShieldAlert, Radio, Satellite, Compass, CheckCircle2 } from 'lucide-react';
 
 const RISK_LEVELS = {
   R: [

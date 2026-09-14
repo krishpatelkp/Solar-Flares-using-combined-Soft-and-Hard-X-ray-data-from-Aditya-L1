@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { FileText, Printer, Download, Copy, Check, X, ShieldAlert, Sparkles, AlertTriangle } from 'lucide-react';
+import { FileText, Printer, Download, Copy, Check, X } from 'lucide-react';
 
-export default function AdvisoryBulletinModal({ isOpen, onClose, forecast, telemetry }) {
+export default function AdvisoryBulletinModal({ isOpen, onClose, forecast }) {
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
